@@ -1,0 +1,64 @@
+INSTALLTAION OF PPOSTGRESQL SERVER AND CLIENT
+
+[1] Download Source Code
+https://www.postgresql.org/ftp/source/
+
+[2] run configure
+1st we have to install libreadline for successfull configure  
+$ ./configure
+
+[3] Complie
+$ make
+
+[4] Install 
+$ sudo make install
+
+[5] run initdb
+$ mkdir /usr/local/pgsql/data
+$ sudo adduser postgresql
+$ sudo chown postgres:postgersql /usr/local/pgsql/data //add postgresql usr in /etc/sudors "%sudo   ALL=(ALL:ALL) ALL and postgres ALL=(ALL:ALL) ALL"
+$ sudo -i -u postgres
+/usr/local/pgsql/bin/initdb -D /usr/local/pgsql/data
+
+[6] set the superuser password using initdb
+postgres@PUCSD:~$  sudo -i -u postgres /usr/local/pgsql/bin/createuser supriya --superuser
+postgres@PUCSD:~$  createdb supriya
+postgres@PUCSD:~$  createdb supriya
+$ sudo -i -u supri
+supriya@PUCSD:~$ psql
+
+[7] set the server incoding during initdb
+supriya@PUCSD:~$sudo -i -u postgres /usr/local/pgsql/bin/initdb en_IN -D /home/supriya/spc/data
+
+[8] Start postgres/postmaster service
+supriya@PUCSD:~$/usr/local/pgsql/bin/pg_ctl -D /usr/local/pgsql/data -l logfile start
+
+[9] use pg_controldata to see the current server settings
+postgres@PUCSD:/home/supriya/spc/data$ pg_controldata -V
+
+[10] create serveral databases
+postgres@PUCSD:~ /usr/local/pgsql/bin/createdb test
+postgres@PUCSD:~ createdb supriya
+supriya@PUCSD:~/spc$ createdb user1
+
+[11] setup postmaster automatically on reboot and test
+i made an .bashrc file in postgres by exporting pgsql/bin directory path to execute command 
+postgres@PUCSD:~ echo 'export PATH=$PATH:/usr/local/pgsql/bin/'>> ~/.bashrc
+also create a  file to get pgsql recoginzed by user
+supriya@PUCSD:~echo 'export PATH=$PATH:/usr/local/pgsql/bin/'>> ~/.zshrc
+every time on reboot postgresl ask for socket connect which will be started by intialisng/source /etc/rc.local file by  the command
+supriya@PUCSD:~$pg_ctl start -D /usr/local/pgsql/data
+also becoz our data dir say "/usr/local/pgsql/data/ has owner postgresql therefore we couldn't access /usr/local/pgsql/data/postmaster.pid which is required for server starting 
+also becoz our data dir say "/usr/local/pgsql/data/ has owner postgresql therefore we couldn't access /usr/local/pgsql/data/postmaster.pid which is required for server starting 
+then login into another user run the 'source ~/.zshrc' file to invoke pgsql and then the psql can get started by login user
+
+[12] configure the postmaster to automatically stop on system shutdown
+save the data dirctory path of postgresql to .bashrc of postgresql user every time service start it get invoked
+
+[13] run multiple Postgers server
+- create data directory '/usr/local/pgsql/data' and get it in work by run initdb refering to that directoy then start by the same directory as 
+postgres/supriya@PUCSD:~ pg_ctl -D /usr/local/pgsql/data -l logfile start
+- create data directory '/home/supriya/spc/data' and get it in work by run initdb refering to that directoy then start by the same directory as 
+postgres/supriya@PUCSD:~/usr/local/pgsql/bin/pg_ctl -D /home/supriya/spc/data/ -l logfile start
+we can get 2 differnt servers bt can intitailse one at time
+

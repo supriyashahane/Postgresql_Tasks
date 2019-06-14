@@ -1,0 +1,131 @@
+[1] Increase the maximum number of connections
+in /usr/local/pgsql/data/postgresql.conf file or /home/supriya/spc/data/postgresql.conf file
+max_connections = 100      # change require number of connections
+
+[2] Increase the number shared buffers
+in /usr/local/pgsql/data/postgresql.conf file or /home/supriya/spc/data/postgresql.conf file
+shared_buffers = 128MB      # change require number of buffers
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data
+
+[3] Increse the kernel shared memory limit to supprot more shared buffers
+in /usr/local/pgsql/data/postgresql.conf file or /home/supriya/spc/data/postgresql.conf file
+#max_files_per_process = 1000                # min 25
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data
+
+[4] Start another postmaster on a different port and connect it
+postgres@PUCSD:/usr/local/pgsql/data$ /usr/local/pgsql/bin/pg_ctl -D /usr/local/pgsql/data/  -o "-p 5224" start
+postgres@PUCSD:/usr/local/pgsql/data$ /usr/local/pgsql/bin/psql -p 5224 stop
+postgres@PUCSD:/usr/local/pgsql/bin$ pg_ctl -D /home/supriya/spc/data/ -l logfile -o "-p 2552" start
+postgres@PUCSD:/usr/local/pgsql/bin$ pg_ctl -D /home/supriya/spc/data/ -l logfile -o "-p 2552" stop
+
+[5] Enable full logging output in the server logs
+in /usr/local/pgsql/data/postgresql.conf file or /home/supriya/spc/data/postgresql.conf file
+
+log_statement = all
+
+turn on/uncomment log_destinstion variable, logging_collector
+postges user must be able to access pg_log directory
+
+[6] Enable full logging output to the client
+in /usr/local/pgsql/data/postgresql.conf file or /home/supriya/spc/data/postgresql.conf file
+client_min_messages ='log';
+
+[7] Print only statements that genrate errors
+postgres@PUCSD:~$ grep -Eo 'STATEMENT:.*.;|ERROR:.*' logfile
+
+[8] Print all queries
+postgres@PUCSD:~$ grep -Eo 'STATEMENT:.*.;' logfile
+
+[9] Print queries that take over several seconds
+in /usr/local/pgsql/data/postgresql.conf file or /home/supriya/spc/data/postgresql.conf file
+log_min_duration_statement = 50 
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data
+
+[10] Print timestamps on every log line
+in /usr/local/pgsql/data/postgresql.conf file or /home/supriya/spc/data/postgresql.conf file
+log_line_prefix = '%m [%p] '
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data
+postgres@PUCSD:~$ grep -w 'ISTLOG.*.' logfile
+postgres@PUCSD:~$ less logfile
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data
+
+[11] Start two sessions and grep specific sessions from the loop
+supriya@PUCSD:~$ ps aux | grep postgres    start two psql sessions
+supriya@PUCSD:~$ ps aux | grep psql grep specific sessions from the loop
+
+[12] Find the user name of that session
+postgres=# select session_user;
+
+[13] Enable syslog server reporting
+in /usr/local/pgsql/data/postgresql.conf file or /home/supriya/spc/data/postgresql.conf file
+
+[14] Create a database, create some tables, dump the database, drop the database, recreate the database, reload the database
+
+supriya@PUCSD:~$ source ~/.zshrc 
+supriya@PUCSD:~$ psql 
+supriya=# create database priya;
+supriya=# \c priya
+priya=# create table x(id int);
+priya=# create table y(id int);
+priya=# create table z(id int);
+priya=# insert into x values(10);
+priya=# insert into x values(20);
+priya=# insert into y values(10);
+priya=# insert into y values(20);
+priya=# insert into z values(10);
+priya=# \q
+supriya@PUCSD:~$ su - postgres
+postgres@PUCSD:~$ pg_dump priya | gzip > priya_backup.gz
+postgres@PUCSD:~$ psql
+postgres=# drop database priya;
+postgres=# \q
+postgres@PUCSD:~$ psql -c "create database priya;"
+postgres@PUCSD:~$ gunzip -c priya_backup.gz | psql priya
+postgres@PUCSD:~$ psql priya
+priya=# \d
+priya=# \q
+postgres@PUCSD:~$ logout
+supriya@PUCSD:~$ psql priya
+priya=# \d
+priya=# \q
+
+[15] Same as above, but reload into a different database
+postgres@PUCSD:~$ gunzip -c priya_backup.gz | psql priya1 
+postgres@PUCSD:~$ psql priya1 
+priya1=# \d
+priya1=# \q
+postgres@PUCSD:~$ logout
+supriya@PUCSD:~$ psql priya1
+priya1=# \d
+priya1=# \q
+
+[16] Create several databases, dump them all into a single file, initdb and reload
+we have serveral databases into /usr/local/pgsql/data dump them all into single file
+postgres@PUCSD:/usr/local/pgsql/bin$ pg_dumpall > db.out
+initdb creates a new PostgreSQL database cluster. A database cluster is a collection of databases that are managed by a single server instance.
+postgres@PUCSD:/usr/local/pgsql$ sudo mkdir /home/supriya/spc/data1
+postgres@PUCSD:/home/supriya/spc/data1$ initdb -D /home/supriya/spc/data1
+postgres@PUCSD:/home/supriya/spc/data1$ pg_ctl stop -D /usr/local/pgsql/data
+postgres@PUCSD:/home/supriya/spc/data1$ pg_ctl -D /home/supriya/spc/data1 -l logfile start
+postgres@PUCSD:/home/supriya/spc/data1$ psql -f /usr/local/pgsql/bin/db.out postgres
+postgres@PUCSD:/home/supriya/spc/data1$ psql
+psql (10.2)
+Type "help" for help.
+
+postgres=# \du
+List of roles
+Role name |                         Attributes                         | Member of
+-----------+------------------------------------------------------------+-----------
+adi       | Superuser, Create role, Create DB                          | {editor}
+admin     | Cannot login                                               | {}
+editor    | Cannot login                                               | {}
+postgres  | Superuser, Create role, Create DB, Replication, Bypass RLS | {}
+supriya   | Superuser, Create role, Create DB                          | {}
+u1        |                                                            | {}
+u2        | Cannot login                                               | {}
+u3        | Cannot login                                               | {}
+viewer    | Cannot login                                               | {}
+
+postgres=#
+
+

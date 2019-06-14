@@ -1,0 +1,123 @@
+[1] create several database users
+supriya=# create role u1;
+supriya=# create role u2 with password 'aru';
+supriya=# create role u3 with password 'aru';
+
+[2] Connect to a database as several users
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+local    supriya            all                                     trust
+
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data
+psql supriya -U postgres
+psql supriya -U adi
+psql supriya -U adi
+
+[3] Restrict connection to the single user
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+local    all            supriya                                  trust
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data
+psql supriya -U supriya
+psql postgres -U supriya
+psql adi -U supriya #can login
+psql adi -U supri #doenst
+
+[4] Restrict connection to a single database
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+hide connect to all local connection first
+#local   all             all                                     trust
+and then grant permissio all to single database
+local    supriya             all                                     trust
+
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data
+psql supriya -U adi
+psql supriya -U supriya #can login
+psql priya -U supriya #cant
+
+[5] Use socket permission to restrict socket access
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+host database uname address auth-method
+
+[6] host database uname address auth-method
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+local  adi              adi                                  password
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data
+adi@pucsd:~$psql //ask for password
+
+[7] Restrict access to specific group
+adi=# CREATE ROLE viewer;
+adi=# CREATE ROLE editor;
+adi=# CREATE ROLE admin;
+adi=# GRANT SELECT ON ALL TABLES IN SCHEMA public TO viewer;
+adi=# ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO viewer;
+adi=# ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT,INSERT,UPDATE ON TABLES TO editor;
+adi=# GRANT SELECT ON ALL TABLES IN SCHEMA public TO admin;
+
+after that just grant group to user:
+adi=# GRANT editor TO adi;
+
+[8] Enable and test Md5 encryption
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+local   all             all                                     md5
+
+[9] Enable internet connections
+in /usr/local/pgsql/data/postgresql.conf file or /home/supriya/spc/data/postgresql.conf file
+listen_addresses = '*'  
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+host    all             all             all                     trust
+
+[10] Enable access to Specific IP address
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+host all all 192.168.1.1 md5 and then restart postgresql
+#postgres@PUCSD:~$ psql -h 192.168.1.1 -U username -d database
+postgres@PUCSD:~$ psql -h 192.168.43.39 -U vrushali -d exam1
+
+[11] Create an SLL coonection and force SSL connections
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+hostssl all all all md5
+
+[12] Enable local ident or host ident connections
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+Allow any user from any host with IP address 192.168.93.x to connect to database "postgres" as the same user name that ident reports for the connection (typically the operating system user name).comment all other local or host except ident one connection and restart postgresql serve
+
+host postgres all 192.168.93.0/24 ident
+postgres@PUCSD:~$ psql -h 192.168.43.81 -U supriya -d
+postgres#
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+Allow users from 192.168.x.x hosts to connect to any database, if they pass the ident check
+host all all 192.168.0.0/16 ident map=omicron
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data
+postgres@PUCSD:~$ psql -h 192.168.43.81 -U adi -d priya
+
+[13] Create a mapping from Unix names to database names
+in /usr/local/pgsql/data/pg_ident.conf file or /home/supriya/spc/data/pg_ident.conf file
+omicron supriya supriya or omicron supriya vrushali
+nd gives mapping in in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file as
+host    all             all             192.168.0.0/16          ident map=omicron
+restart postgresql service $ pg_ctl restart -D /usr/local/pgsql/data and pg_ctl reload -D /usr/local/pgsql/data to read pg_ident.conf file
+psql -h 192.168.43.81 -U supriya
+
+[14] Enable per db user
+in /usr/local/pgsql/data/pg_hba.conf file or /home/supriya/spc/data/pg_hba.conf file
+
+local   sameuser        all                                     md5
+
+allow local users to connect only to their own databases and then restart postgresql it will give error if user try to connect with other database. must comment out all privious commnads to apply the changes
+
+supriya@PUCSD:~$ psql priya
+2019-05-01 23:20:14.276 IST [6650] FATAL:  no pg_hba.conf entry for host "[local]", user "supriya", database "priya"
+psql: FATAL:  no pg_hba.conf entry for host "[local]", user "supriya", database "priya"
+
+[15] Add an object to template1 and verify it apperes in a new database
+template1 is the default source database name for CREATE DATABASE. If you add objects to template1, these objects will be copied into subsequently created user databases
+postgres@PUCSD:~$ psql template1
+template1=# create table xy(id int);
+template1=# insert into xy values (10);
+template1=# create database supu;
+template1=# \c supu 
+supu=# \d
+ List of relations
+ Schema | Name | Type  |  Owner   
+--------+------+-------+----------
+ public | xy   | table | postgres
+(1 row)
+
